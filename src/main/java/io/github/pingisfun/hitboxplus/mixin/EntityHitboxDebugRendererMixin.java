@@ -48,24 +48,25 @@ public class EntityHitboxDebugRendererMixin {
             return null;
         }
 
-        // --- SPEAR CHECK (Iron, Gold, Diamond, Netherite, Stone, Wood, Copper Spears) ---
-        int colorToUse = style.opaqueArgb(); // Default color for normal weapons
+        int colorToUse = style.opaqueArgb();
         MinecraftClient client = MinecraftClient.getInstance();
 
         if (client.player != null && entity != client.player) {
-            if (!client.player.getMainHandStack().isEmpty()) {
-                String itemId = client.player.getMainHandStack().getItem().toString().toLowerCase();
+            // Get item name in main hand OR off hand
+            String mainItem = client.player.getMainHandStack().isEmpty() ? "" : client.player.getMainHandStack().getItem().toString().toLowerCase();
+            String offItem = client.player.getOffHandStack().isEmpty() ? "" : client.player.getOffHandStack().getItem().toString().toLowerCase();
 
-                // Check if holding ANY spear variant
-                boolean isHoldingSpear = itemId.endsWith("spear") || itemId.contains("spear");
+            boolean isHoldingSpear = mainItem.contains("spear") || offItem.contains("spear");
 
-                // Turn GREEN if holding a spear AND target is within 4.5 blocks
-                if (isHoldingSpear && client.player.squaredDistanceTo(entity) <= (4.5 * 4.5)) {
-                    colorToUse = 0xFF00FF00; // Bright Green (ARGB)
-                }
+            // Measure distance to closest point on target entity box
+            double distSq = client.player.getEyePos().squaredDistanceTo(box.getCenter());
+
+            // Check within 6.0 blocks radius
+            if (isHoldingSpear && distSq <= (6.0 * 6.0)) {
+                // Bright Green Color in ARGB (Alpha: FF, Red: 00, Green: FF, Blue: 00)
+                colorToUse = 0xFF00FF00;
             }
         }
-        // ------------------------------------------------------------------
 
         if (style.hitboxPattern() == HitboxPattern.FULL) {
             return original.call(box, DrawStyle.stroked(colorToUse, style.hitboxThickness()));
@@ -179,15 +180,4 @@ public class EntityHitboxDebugRendererMixin {
     }
 
     private static ResolvedHitboxStyle resolveStyle(RuntimeHitboxLookup lookup, Entity entity) {
-        if (entity instanceof ClientPlayerEntity || entity == MinecraftClient.getInstance().player) {
-            return lookup.selfPlayerStyle();
-        }
-
-        if (entity instanceof PlayerEntity) {
-            return lookup.forPlayer((PlayerEntity) entity);
-        }
-
-        return lookup.forEntityType(entity.getType());
-    }
-}
-//?}
+        if (entity instanceof ClientPlayer
