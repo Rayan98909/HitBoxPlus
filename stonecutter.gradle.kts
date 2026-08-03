@@ -4,7 +4,7 @@ plugins {
     id("net.fabricmc.fabric-loom") version "1.15.5" apply false
 }
 
-stonecutter active "1.21.11"
+stonecutter active "26.1.2"
 
 stonecutter parameters {
     filters {
